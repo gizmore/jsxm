@@ -132,6 +132,9 @@ function setCurrentPattern() {
 }
 
 function nextRow() {
+  if (window.XMGFX) {
+	  window.XMGFX.onNewRow(player.cur_row);
+  }
   player.cur_row++;
   if (player.cur_pat == -1 || player.cur_row >= player.xm.patterns[player.cur_pat].length) {
     player.cur_row = 0;
@@ -142,6 +145,8 @@ function nextRow() {
   }
   var p = player.xm.patterns[player.cur_pat];
   var r = p[player.cur_row];
+  
+  
   for (var i = 0; i < r.length; i++) {
     var ch = player.xm.channelinfo[i];
     var inst = ch.inst;
@@ -169,20 +174,26 @@ function nextRow() {
       if (r[i][0] == 96) {
         ch.release = 1;
         triggernote = false;
+	  	  if (window.XMGFX) {
+			  window.XMGFX.onNewRelease(player.cur_row, i);
+		  }
       } else {
-        if (inst && inst.samplemap) {
-          var note = r[i][0];
-          ch.note = note;
-          ch.samp = inst.samples[inst.samplemap[ch.note]];
-          if (triggernote) {
-            // if we were already triggering the note, reset vol/pan using
-            // (potentially) new sample
-            ch.pan = ch.samp.pan;
-            ch.vol = ch.samp.vol;
-            ch.fine = ch.samp.fine;
+          if (inst && inst.samplemap) {
+        	  if (window.XMGFX) {
+        		  window.XMGFX.onNewTrigger(player.cur_row, i, note);
+        	  }
+	          var note = r[i][0];
+	          ch.note = note;
+	          ch.samp = inst.samples[inst.samplemap[ch.note]];
+	          if (triggernote) {
+	            // if we were already triggering the note, reset vol/pan using
+	            // (potentially) new sample
+	            ch.pan = ch.samp.pan;
+	            ch.vol = ch.samp.vol;
+	            ch.fine = ch.samp.fine;
+	          }
+	          triggernote = true;
           }
-          triggernote = true;
-        }
       }
     }
 
@@ -190,6 +201,9 @@ function nextRow() {
     if (r[i][2] != -1) {  // volume column
       var v = r[i][2];
       ch.voleffectdata = v & 0x0f;
+  	  if (window.XMGFX) {
+		  window.XMGFX.onNewValue(player.cur_row, i, ch.voleffectdata);
+	  }
       if (v < 0x10) {
         console.log("channel", i, "invalid volume", v.toString(16));
       } else if (v <= 0x50) {
